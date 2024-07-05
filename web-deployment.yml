@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: webserver-deployment
+spec:
+  replicas: 1
+  selector:  
+    matchLabels:
+      app: web-server
+  template: 
+    metadata: 
+      labels:
+        app: web-server
+    spec: 
+      volumes:
+      - name: log-data
+        persistentVolumeClaim:
+          claimName: log-data-volume-claim         
+      - name: nginx-data
+        emptyDir: {}            
+      containers:
+      - name: nginx-instance
+        image: nginx
+        volumeMounts:
+          - mountPath: /var/log/nginx
+            name: nginx-data        
+        ports:
+        - containerPort: 80          
+      - name: copy-data 
+        image: ubuntu  
+        command: ["/bin/sh", "-c"]
+        args:
+        - >
+          while true;
+          do
+            sleep 30
+            cp /home/data/access.log /home/logs/access.log             
+          done        
+        volumeMounts:    
+          - name: log-data
+            mountPath: /home/logs
+          - name: nginx-data
+            mountPath: /home/data
